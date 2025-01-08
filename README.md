@@ -38,9 +38,9 @@ It's a shell script, so just download [stutter][rawlink], mark it executable (`c
 
 ## Background
 
-The `nice` command gives a hint to UNIX systems that certain processes should use less CPU. The Linux kernel additionally offers `ionice` and `chrt` which affect how often the process can access resources like the disk. However, those tools have often proven insufficient. Background processes which have been set as nice as possible can interfere with high priority tasks, such as streaming video or even the user interface. If you meet a processes which is needlessly impolite even after you've asked it to be nice, then this program is for you. Stutter forces a process to pause repeatedly (100 times a second by default) using UNIX signals. 
+The `nice` command gives a hint to UNIX systems that certain processes should use less CPU. The Linux kernel additionally offers `ionice` and `chrt` which affect how often the process can access resources like the disk. However, those tools have often proven insufficient. Background processes which have been set as nice as possible can still interfere with high priority tasks, such as streaming video or the user interface. If you meet a processes which is needlessly impolite even after you've asked it to be nice, then this program is for you. Stutter forces a process to pause repeatedly (100 times a second by default) using UNIX signals. 
 
-This is particularly useful for daemons launched from cron which should not interfere with any interactive users. 
+This is particularly useful for background "idle" jobs launched from cron which should not interfere with interactive users. However, it has also proven handy to slow down processes for debugging issues that can normally be hard to reproduce such as timing, race conditions, and interrupt handling. 
 
 ## How it works
 
