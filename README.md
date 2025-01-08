@@ -44,7 +44,7 @@ This is particularly useful for daemons launched from cron which should not inte
 
 ## How it works
 
-Technically, it uses SIGSTOP/SIGCONT with a 10% active duty cycle and 0.1s period. You can adjust the on/off time by editing the script.
+Technically, it uses SIGSTOP/SIGCONT with a 10% active duty cycle and 0.1s period. You can adjust the on/off time by editing [the script](stutter).
 
 ```bash
 # A reasonable default is to have the process active for 0.01s and
