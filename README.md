@@ -32,7 +32,9 @@ or:
 
 ## Installation
 
-It's a shell script, so just download [stutter](stutter), mark it executable (`chmod +x`), and move it to your bin directory (`/usr/local/bin/stutter`).
+It's a shell script, so just download [stutter][rawlink], mark it executable (`chmod +x`), and move it to your bin directory (`/usr/local/bin/stutter`).
+
+  rawlink: https://github.com/hackerb9/stutter/raw/refs/heads/main/stutter "Download stutter shell script"
 
 ## Background
 
