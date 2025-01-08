@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# stutter: Make a resource hogging process be more polite.
+# v1.1 (c) 2018 B9 - GPLv3 or higher.
+#
+# Usage:  stutter -p PID
+#    or:  stutter command [arguments...]
+
+# It is possible for some background processes to rudely prevent
+# interactive use of a computer, even when the command is asked to be
+# nice using "nice -n 19 ionice -c 3 $CMD".
+# [Yes, I'm looking at you, update-apt-xapian-index.]
+
+# This kludge repeatedly sends STOP and CONT signals to a process so
+# that it will "stutter", running and halting repeatedly. This gives
+# other processes a better chance of getting the disk/CPU/network or
+# whatever resource was being hogged.
+
+# A reasonable default is to have the process active for 0.01s and
+# sleep for 0.09s.  (A 10% duty cycle with a period of 0.1s).
+ ontime=0.01
+offtime=0.09
+
+#verbose=true
+debug() {
+    if [ "$verbose" = "true" ]; then
+	echo "$@" >&2
+    fi
+}
+
+# This part is unnecessary. I am just a neatnik.
+bcinit='scale=3;
+/* Truncate lots of zeroes (e.g. 7/4 -> 1.75 instead of 1.75000000000000). */
+define trunc(x) {
+  auto os; os=scale;
+  for(scale=0;scale<=os;scale++) if(x==x/1) {x/=1;scale=os;return x}
+  /* If we get here, x has more significant digits than current scale. */
+  return x;
+}'
+
+
+usage() {
+    period=$(echo "trunc($ontime + $offtime)" | bc <(echo "$bcinit"))
+    duty=$(echo "trunc($ontime * 100 / $period)" | bc <(echo "$bcinit"))
+
+    cat <<EOF
+stutter	- Force a process to pause its work every once in a while.
+
+Usage:	stutter [ -p <pid> | <cmd> [cmd-args...] ]
+
+Why?	Some background processes are resource hogs that slow down
+ 	interactive users. This script can stop and restart them
+ 	several times a second, forcing them to be polite.
+
+Current defaults:
+	   on time: $ontime seconds
+	  off time: $offtime seconds
+	  (A ${duty}% duty cycle with a period of ${period}s).
+
+Examples:
+  1) Run the 'dd' command under stutter. (^C will cancel both stutter and dd.)
+
+	stutter dd if=/dev/zero of=/dev/null status=progress
+
+  2) Cause existing process 8191 to stutter. (^C cancels stutter, not 8191.)
+
+	stutter -p 8191
+EOF
+}
+
+cleanup() {
+    if [ "$pid" ] && ps --pid $pid >/dev/null; then
+	if [ "$processWasAlreadyRunning" ]; then
+	    if kill -CONT $pid 2>/dev/null; then
+		debug "Detached from $pid"
+	    fi
+	else
+	    debug "Killing $pid"
+	    kill $pid 2>/dev/null
+	fi
+    fi
+    trap - EXIT
+    exit
+}
+
+
+trap cleanup INT QUIT EXIT
+
+
+if [ -z "$1"  -o  "$1" = "-h"  -o  "$1" = "--help" ]; then
+    usage
+    exit 1
+fi
+
+if [ "$1" = "-p" ]; then
+    # Attach to existing process
+    processWasAlreadyRunning=TRUE
+    pid="$2"
+    if [ ! "$pid" ]; then usage; exit 1; fi
+    if kill -STOP $pid; then
+	debug "Attaching to $pid. Hit ^C to detach." 
+    else
+	echo "Error: Could not send STOP signal to process ID $pid." >&2
+	exit 3
+    fi
+else
+    # Run a new command
+    "$@" &
+    pid=$!
+    if [ "$pid" ] && ps --pid $pid >/dev/null; then
+	# Note: using ps to check if command was not found or already exited. 
+	debug "Launched command \"$*\" as PID $pid. Hit ^C to kill it." 
+    fi
+fi
+
+while :; do
+    kill -STOP $pid 2>/dev/null || break
+    sleep $offtime
+    kill -CONT $pid 2>/dev/null || break
+    sleep $ontime
+done
+
+
