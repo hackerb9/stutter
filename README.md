@@ -15,9 +15,20 @@ or:
 
 <ul>
   
-  **stutter** &nbsp; _command_ &nbsp; [_arguments_ ...]
+  **stutter** &nbsp; _command_ &nbsp; \[ _command-arguments_ ... \]
 
 </ul>
+
+## Examples
+
+1. Run the 'dd' command under stutter. (^C will cancel both stutter and dd.)
+   ```
+   stutter dd if=/dev/zero of=/dev/null status=progress
+   ```
+   
+2. Cause existing process 8191 to stutter. (^C cancels stutter, not 8191.)
+
+        stutter -p 8191
 
 ## Installation
 
